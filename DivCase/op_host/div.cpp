@@ -8,7 +8,6 @@
 namespace optiling {
 static ge::graphStatus TilingFunc(gert::TilingContext* context)
 {
-
   DivTilingData tiling;
   auto dt = context->GetInputTensor(0)->GetDataType();
 
@@ -47,11 +46,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
       tiling.set_inputShape01(shape01);
       tiling.set_inputShape10(shape10);
       tiling.set_inputShape11(shape11);
-    //   std::cout << "shape00 = " << shape00 << " shape01 = " << shape01 << " shape10 = " << shape10 << " shape11 = " << shape11 << std::endl;
-      // tiling.set_inputShape00(inputShape0.GetDim(0));
-      // tiling.set_inputShape01(inputShape0.GetDim(1));
-      // tiling.set_inputShape10(inputShape1.GetDim(0));
-      // tiling.set_inputShape11(inputShape1.GetDim(1));
       // 先判断谁需要进行广播
       uint8_t who = -1;
       if (inputShape0.GetShapeSize() < inputShape1.GetShapeSize()){
@@ -93,8 +87,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   // 广播需要解决两个问题，1、两个输入谁需要广播，2、以什么样的方式广播（总共有两种广播的方式）
 
   // 1、解决谁需要广播
-//   auto inputShap1 = context->GetInputShape(0)->GetStorageShape();
-//   auto inputShap2 = context->GetInputShape(1)->GetStorageShape();
   uint32_t inputNum = context->GetInputShape(0)->GetStorageShape().GetShapeSize();
   uint32_t inputNum1 = context->GetInputShape(1)->GetStorageShape().GetShapeSize();
   auto dim0 = context->GetInputShape(0)->GetStorageShape().GetDimNum();
@@ -154,24 +146,24 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   /**
       大核
    */
-//   everyCoreInputBlockNum++;
-//   uint32_t bigCoreDataNum = everyCoreInputBlockNum * 32 / inputBytes;
+  everyCoreInputBlockNum++;
+  uint32_t bigCoreDataNum = everyCoreInputBlockNum * 32 / inputBytes;
 
-//   uint32_t bigCoreCount = everyCoreInputBlockNum / blockNum;
-//   uint32_t bigCoreCarryNum = (everyCoreInputBlockNum % blockNum == 0) ? bigCoreCount : (bigCoreCount + 1);
+  uint32_t bigCoreCount = everyCoreInputBlockNum / blockNum;
+  uint32_t bigCoreCarryNum = (everyCoreInputBlockNum % blockNum == 0) ? bigCoreCount : (bigCoreCount + 1);
 
-//   uint32_t bigCoreFinallDealNum = bigCoreDataNum - (dataNum * bigCoreCount);
-//   bigCoreFinallDealNum = (bigCoreFinallDealNum == 0) ? dataNum : bigCoreFinallDealNum;
+  uint32_t bigCoreFinallDealNum = bigCoreDataNum - (dataNum * bigCoreCount);
+  bigCoreFinallDealNum = (bigCoreFinallDealNum == 0) ? dataNum : bigCoreFinallDealNum;
 
   // 将上述计算的值全部回填到tiling中
   tiling.set_smallCoreDataNum(smallCoreDataNum);
-//   tiling.set_bigCoreDataNum(bigCoreDataNum);
+  tiling.set_bigCoreDataNum(bigCoreDataNum);
   tiling.set_smallCoreCarryNum(smallCoreCarryNum);
-//   tiling.set_bigCoreCarryNum(bigCoreCarryNum);
+  tiling.set_bigCoreCarryNum(bigCoreCarryNum);
   tiling.set_tileDataNum(dataNum);
   tiling.set_smallCoreFinallDealNum(smallCoreFinallDealNum);
-//   tiling.set_bigCoreFinallDealNum(bigCoreFinallDealNum);
-//   tiling.set_bigCoreNum(tailBlockNum);
+  tiling.set_bigCoreFinallDealNum(bigCoreFinallDealNum);
+  tiling.set_bigCoreNum(tailBlockNum);
   tiling.set_dataType(dt);
   tiling.set_dim0(dim0);
   tiling.set_dim1(dim1);

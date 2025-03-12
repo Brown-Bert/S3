@@ -6,7 +6,7 @@ class KernelDiv {
 public:
     __aicore__ inline KernelDiv() {}
     __aicore__ inline void Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, uint32_t tileDataNum, uint32_t smallCoreDataNum, uint32_t smallCoreCarryNum,
-        uint32_t smallCoreFinallDealNum, uint32_t inputShape00, uint32_t inputShape01, uint32_t inputShape10, uint32_t inputShape11,
+        uint32_t smallCoreFinallDealNum, uint32_t bigCoreDataNum, uint32_t bigCoreCarryNum, uint32_t bigCoreFinallDealNum, uint32_t bigCoreNum, uint32_t inputShape00, uint32_t inputShape01, uint32_t inputShape10, uint32_t inputShape11,
         uint8_t dataType, uint8_t dim0, uint8_t dim1, uint8_t axis, uint8_t who, uint8_t isBroadcast)
     {
         // this->type = type;
@@ -22,19 +22,19 @@ public:
         this->isBroadcast = isBroadcast;
         this->dataType = dataType;
         uint32_t aicoreIndex = GetBlockIdx();
-        uint32_t globalBufferIndex = 0;
-        // uint32_t globalBufferIndex = bigCoreDataNum * aicoreIndex;
+        // uint32_t globalBufferIndex = 0;
+        uint32_t globalBufferIndex = bigCoreDataNum * aicoreIndex;
         this->tileDataNum = tileDataNum;
-        // if (aicoreIndex < bigCoreNum){
-        //     this->coreDataNum = bigCoreDataNum;
-        //     this->coreCarryTimes = bigCoreCarryNum;
-        //     this->coreFinallDataNum = bigCoreFinallDealNum;
-        // }else{
+        if (aicoreIndex < bigCoreNum){
+            this->coreDataNum = bigCoreDataNum;
+            this->coreCarryTimes = bigCoreCarryNum;
+            this->coreFinallDataNum = bigCoreFinallDealNum;
+        }else{
             this->coreDataNum = smallCoreDataNum;
             this->coreCarryTimes = smallCoreCarryNum;
             this->coreFinallDataNum = smallCoreFinallDealNum;
-            // globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (aicoreIndex - bigCoreNum);
-        // }
+            globalBufferIndex -= (bigCoreDataNum - smallCoreDataNum) * (aicoreIndex - bigCoreNum);
+        }
         x1Gm.SetGlobalBuffer((__gm__ DTYPE_X1 *)x1 + globalBufferIndex, this->coreDataNum);
         x2Gm.SetGlobalBuffer((__gm__ DTYPE_X2 *)x2 + globalBufferIndex, this->coreDataNum);
         yGm.SetGlobalBuffer((__gm__ DTYPE_Y *)y + globalBufferIndex, this->coreDataNum);
@@ -43,9 +43,9 @@ public:
         pipe.InitBuffer(inQueueX2, 2, this->tileDataNum * sizeof(DTYPE_X2));
         pipe.InitBuffer(outQueueY, 2, this->tileDataNum * sizeof(DTYPE_Y));
 
-        pipe.InitBuffer(tempQueueHalf, this->tileDataNum * sizeof(half));
-        pipe.InitBuffer(tempQueueFloat, this->tileDataNum * sizeof(float));
-        pipe.InitBuffer(tempQueueZero, sizeof(float));
+        pipe.InitBuffer(tempQueueHalf, 2, this->tileDataNum * sizeof(half));
+        pipe.InitBuffer(tempQueueFloat, 2, this->tileDataNum * sizeof(float));
+        pipe.InitBuffer(tempQueueZero, 2, sizeof(float));
     }
     __aicore__ inline void Process()
     {
@@ -348,7 +348,7 @@ private:
     TPipe pipe;
     //create queue for input, in this case depth is equal to buffer num
     TQue<QuePosition::VECIN, BUFFER_NUM> inQueueX1, inQueueX2;
-    TBuf<QuePosition::VECCALC> tempQueueHalf, tempQueueFloat, tempQueueZero;
+    TQue<QuePosition::VECIN, BUFFER_NUM> tempQueueHalf, tempQueueFloat, tempQueueZero;
     //create queue for output, in this case depth is equal to buffer num
     TQue<QuePosition::VECOUT, BUFFER_NUM> outQueueY;
     GlobalTensor<DTYPE_X1> x1Gm, x2Gm;
@@ -382,7 +382,7 @@ extern "C" __global__ __aicore__ void div(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_
     GET_TILING_DATA(tiling_data, tiling);
     KernelDiv op;
     //补充init和process函数调用内容
-    op.Init(x1, x2, y, tiling_data.tileDataNum, tiling_data.smallCoreDataNum, tiling_data.smallCoreCarryNum, tiling_data.smallCoreFinallDealNum,
+    op.Init(x1, x2, y, tiling_data.tileDataNum, tiling_data.smallCoreDataNum, tiling_data.smallCoreCarryNum, tiling_data.smallCoreFinallDealNum, tiling_data.bigCoreDataNum, tiling_data.bigCoreCarryNum, tiling_data.bigCoreFinallDealNum, tiling_data.bigCoreNum,
         tiling_data.inputShape00, tiling_data.inputShape01, tiling_data.inputShape10, tiling_data.inputShape11, tiling_data.dataType, tiling_data.dim0,tiling_data.dim1, tiling_data.axis, 
             tiling_data.who, tiling_data.isBroadcast);
     op.Process();

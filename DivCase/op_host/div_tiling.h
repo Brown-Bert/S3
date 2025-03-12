@@ -5,17 +5,13 @@
 namespace optiling {
 BEGIN_TILING_DATA_DEF(DivTilingData)
 TILING_DATA_FIELD_DEF(uint32_t, smallCoreDataNum);        // 小核处理的总数据量
-// TILING_DATA_FIELD_DEF(uint32_t, bigCoreDataNum);          // 大核处理的总数据量
+TILING_DATA_FIELD_DEF(uint32_t, bigCoreDataNum);          // 大核处理的总数据量
 TILING_DATA_FIELD_DEF(uint32_t, smallCoreCarryNum);       // 小核搬运数据的次数
-// TILING_DATA_FIELD_DEF(uint32_t, bigCoreCarryNum);         // 大核搬运数据的次数
+TILING_DATA_FIELD_DEF(uint32_t, bigCoreCarryNum);         // 大核搬运数据的次数
 TILING_DATA_FIELD_DEF(uint32_t, tileDataNum);             // 单核能处理最大数据量
 TILING_DATA_FIELD_DEF(uint32_t, smallCoreFinallDealNum);  // 小核最后一次处理的数据量
-// TILING_DATA_FIELD_DEF(uint32_t, bigCoreFinallDealNum);    // 大核最后一次处理的数据量
-// TILING_DATA_FIELD_DEF(uint32_t, bigCoreNum);              // 大核个数
-// TILING_DATA_FIELD_DEF(gert::Shape, inputShap2);           // 第一个输入的形状
-// TILING_DATA_FIELD_DEF(uint32_t, whichSmall);              // 两个输入谁比较小
-// TILING_DATA_FIELD_DEF(uint32_t, size1);
-// TILING_DATA_FIELD_DEF(uint32_t, size2);
+TILING_DATA_FIELD_DEF(uint32_t, bigCoreFinallDealNum);    // 大核最后一次处理的数据量
+TILING_DATA_FIELD_DEF(uint32_t, bigCoreNum);              // 大核个数
 TILING_DATA_FIELD_DEF(uint32_t, inputShape00);              // 输入数据维度 后面两位数据第一位表示是第几个输入 第二位表示输入数据第几维
 TILING_DATA_FIELD_DEF(uint32_t, inputShape01);              // 输入数据维度
 TILING_DATA_FIELD_DEF(uint32_t, inputShape10);              // 输入数据维度
