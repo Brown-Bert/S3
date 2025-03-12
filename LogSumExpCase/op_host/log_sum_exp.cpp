@@ -15,21 +15,18 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   int64_t dimArray[20];
   for (int i = 0; i < dimPtr->GetSize(); ++i) {
     dimArray[i] = *(dimPtr->GetData() + i);
-    // std::cout << "dim = " << dimArray[i] << std::endl;
   }
   auto dim = dimArray[0];
   bool keepDim =  *(context->GetAttrs()->GetBool(1));
  
   // 获取数据类型 0 float 1 half 2 int8 3 int32
   auto dt = context->GetInputTensor(0)->GetDataType();
- //   auto dt1 = context->GetInputTensor(1)->GetDataType();
  
  
   // 获取UB内存大小
   uint64_t ubSize;
   auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
   ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
- //   std::cout << "ubsize = " << ubSize << std::endl;
  
   // 获取AiCore的物理核数
   auto coreNum = ascendcPlatform.GetCoreNum();
@@ -50,10 +47,8 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   }else if (dt == 0 && dims == 2){
     inputNum = context->GetInputShape(0)->GetStorageShape().GetDim(1);
   }else if (dt == 0 && dims == 3){
-    // ubDataNum = 16;
     inputNum = context->GetInputShape(0)->GetStorageShape().GetDim(1) * context->GetInputShape(0)->GetStorageShape().GetDim(2);
   }else{
-    // ubDataNum = 16;
     inputNum = context->GetInputShape(0)->GetStorageShape().GetDim(2);
     inputNumCp = context->GetInputShape(0)->GetStorageShape().GetDim(1) * context->GetInputShape(0)->GetStorageShape().GetDim(2) * context->GetInputShape(0)->GetStorageShape().GetDim(3);
   }
@@ -96,7 +91,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   // 计算数据需要几个core去执行，如果数据量太小就不需要全部的core去执行
   coreNum = (coreNum < inputLengthAlgin32 / 32) ? coreNum : inputLengthAlgin32 / 32;
   coreNum = (coreNum >= 1) ? coreNum : 1;
- //   std::cout << "coreNum = " << coreNum << std::endl;
  
   // 计算每个core需要处理多少个block
   uint32_t everyCoreInputBlockNum = inputLengthAlgin32 / 32 / coreNum;
@@ -152,7 +146,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
     tiling.set_dataSize(dataSize);
     tiling.set_loopCp(0);
     tiling.set_count(1);
-    // dim = context->GetInputShape(0)->GetStorageShape().GetDim(1) * context->GetInputShape(0)->GetStorageShape().GetDim(2);
   }else if (dt == 0 && dims == 4){
     auto loopCp = context->GetInputShape(0)->GetStorageShape().GetDim(0);
     auto dataSizeCp = context->GetInputShape(0)->GetStorageShape().GetDim(1) * context->GetInputShape(0)->GetStorageShape().GetDim(2) * context->GetInputShape(0)->GetStorageShape().GetDim(3);
@@ -164,18 +157,7 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
     tiling.set_loopCp(loopCp);
     tiling.set_dataSizeCp(dataSizeCp);
     tiling.set_count(count);
-    // dim = context->GetInputShape(0)->GetStorageShape().GetShapeSize();
-    // auto dimSize = context->GetInputShape(0)->GetOriginShape().GetDim(1);
-    // tiling.set_dimSize(dimSize);
-    // smallCoreCarryNum = 10;
-    // dim = context->GetInputShape(0)->GetStorageShape().GetDim(3);
-    // dim = coreNum;
   }
- 
- //   std::cout << "smallCoreDataNum = " << smallCoreDataNum << std::endl;
- //   std::cout << "smallCoreCarryNum = " << smallCoreCarryNum << std::endl;
- //   std::cout << "smallCoreFinallDealNum = " << smallCoreFinallDealNum << std::endl;
- //   std::cout << "smallCoreCount = " << smallCoreCount << std::endl;
  
  
  
@@ -212,8 +194,8 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
  
   tiling.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
   context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
-  // size_t* currentWorkspace = context->GetWorkspaceSizes(1);
-  // currentWorkspace[0] = 0;
+  size_t* currentWorkspace = context->GetWorkspaceSizes(1);
+  currentWorkspace[0] = 0;
   context->SetBlockDim(coreNum);
  
   return ge::GRAPH_SUCCESS;

@@ -6,12 +6,8 @@ class KernelIsClose {
 public:
     __aicore__ inline KernelIsClose() {}
     __aicore__ inline void Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, uint32_t bigCoreDataNum, uint32_t tileDataNum, uint32_t bigCoreNum, 
-        uint32_t bigCoreCarryNum, uint32_t bigCoreFinallDealNum, uint32_t smallCoreDataNum, uint32_t smallCoreCarryNum, 
-        uint32_t smallCoreFinallDealNum, uint32_t dataType, float rtol, float atol, bool equal_nan, uint32_t dt1, 
-        uint32_t size, uint32_t dim, uint32_t inputShape00, uint32_t inputShape01, uint32_t inputShape10, uint32_t inputShape11,
-        uint32_t axis, uint32_t who, uint32_t isBroadcast)
+        uint32_t bigCoreCarryNum, uint32_t bigCoreFinallDealNum, uint32_t smallCoreDataNum, uint32_t smallCoreCarryNum, uint32_t smallCoreFinallDealNum, uint32_t dataType, float rtol, float atol, bool equal_nan, uint32_t dt1, uint32_t size, uint32_t dim, uint32_t inputShape00, uint32_t inputShape01, uint32_t inputShape10, uint32_t inputShape11,uint32_t axis, uint32_t who, uint32_t isBroadcast)
     {
-        //考生补充初始化代码
         this->inputShape00 = inputShape00;
         this->inputShape01 = inputShape01;
         this->inputShape10 = inputShape10;
@@ -54,10 +50,8 @@ public:
     }
     __aicore__ inline void Process()
     {
-        //考生补充对“loopCount”的定义，注意对Tiling的处理
         uint32_t loopCount = this->coreCarryTimes;
         this->processDataNum = this->tileDataNum;
-        // AscendC::printf("loopCount = %d, size = %d\n", loopCount, this->tileDataNum);
 
         for (int32_t i = 0; i < loopCount; i++) {
             if ( i == this->coreCarryTimes - 1){
@@ -90,7 +84,6 @@ private:
     }
     __aicore__ inline void CopyIn(int32_t progress)
     {
-        //考生补充算子代码
         AscendC::LocalTensor<DTYPE_X1> x1Local = inQueueX1.AllocTensor<DTYPE_X1>();
         AscendC::LocalTensor<DTYPE_X2> x2Local = inQueueX2.AllocTensor<DTYPE_X2>();
         // 根据数据量拷贝的大小进行手动广播
@@ -247,33 +240,20 @@ private:
     }
     __aicore__ inline void Compute(int32_t progress)
     {
-        //考生补充算子计算代码
         if (this->dataType == 4){
-            // return;
             // 传入的数据是 uint8_t 类型的
-            // AscendC::printf("uint8_t\n");
             if (this->rtol < 0 || this->atol < 0){return;}
-            // if (this->dim != this->size){
-            //     AscendC::printf("size != dataTypeCp\n");
-            //     return;
-            // }
 
             // 获取传入的数据以及分配传出数据的空间
             AscendC::LocalTensor<uint8_t> x1Local = inQueueX1.DeQue<uint8_t>();
             AscendC::LocalTensor<uint8_t> x2Local = inQueueX2.DeQue<uint8_t>();
             AscendC::LocalTensor<int8_t> yLocal = outQueueY.AllocTensor<int8_t>();
-            // for (int i = 0; i < 10; i++){
-            //     uint8_t value1 = x1Local.GetValue(i);
-            //     uint8_t value2 = x2Local.GetValue(i);
-            //     AscendC::printf("value1 = %d, value2 = %d, size = %d\n", value1, value2, this->processDataNum);
-            // }
 
             // 进行计算需要的临时变量
             AscendC::LocalTensor<half> tempHalf1 = tempQueueHalf.AllocTensor<half>();
             AscendC::LocalTensor<half> tempHalf2 = tempQueueHalf.AllocTensor<half>();
             AscendC::LocalTensor<float> tempFloat1 = tempQueueFloat.AllocTensor<float>();
             AscendC::LocalTensor<float> tempFloat2 = tempQueueFloat.AllocTensor<float>();
-            // AscendC::LocalTensor<uint8_t> dstLocal = dstQueueUint8.AllocTensor<uint8_t>();
 
             // 数据计算
             AscendC::Cast(tempHalf1, x1Local, AscendC::RoundMode::CAST_NONE, this->processDataNum);
@@ -281,41 +261,12 @@ private:
             AscendC::Sub(tempHalf1, tempHalf1, tempHalf2, this->processDataNum);
             AscendC::Abs(tempHalf1, tempHalf1, this->processDataNum);
             AscendC::Cast(tempFloat1, tempHalf1, AscendC::RoundMode::CAST_NONE, this->processDataNum);
-            // float p0 = tempFloat1.GetValue(0);
-            // AscendC::printf("p0 = %f, rtol = %f\n", p0, this->rtol);
 
             AscendC::Cast(tempHalf2, x2Local, AscendC::RoundMode::CAST_NONE, this->processDataNum);
-            // auto sp = x2Local.GetSize();
-            // AscendC::printf("123 = %d, sadgf = %d\n", sp, this->processDataNum);
             AscendC::Abs(tempHalf2, tempHalf2, this->processDataNum);
-            // half t0 = tempHalf2.GetValue(0);
-            // uint32_t si = tempHalf2.GetSize();
-            // uint32_t ti = tempFloat2.GetSize();
-            // AscendC::printf("t0 = %f, si = %d, ti = %d\n", t0, si, ti);
             AscendC::Cast(tempFloat2, tempHalf2, AscendC::RoundMode::CAST_NONE, this->processDataNum);
-            // float t1 = tempFloat2.GetValue(0);
-            // AscendC::printf("t0 = %f\n", t1);
             AscendC::Muls(tempFloat2, tempFloat2, this->rtol, this->processDataNum);
-            // t1 = tempFloat2.GetValue(0);
-            // AscendC::printf("t1 = %f\n", t1);
             AscendC::Adds(tempFloat2, tempFloat2, this->atol, this->processDataNum);
-            // t1 = tempFloat2.GetValue(0);
-            // AscendC::printf("t2 = %f\n", t1);
-            // AscendC::Sub(tempFloat1, tempFloat1, tempFloat2, this->processDataNum);
-
-            // AscendC::Duplicate<float>(tempFloat2, (float)0.0, this->processDataNum);
-            // AscendC::Compare(dstLocal, tempFloat1, tempFloat2, AscendC::CMPMODE::LE, this->processDataNum);
-            // AscendC::Duplicate<half>(tempHalf1, (half)0.0, this->processDataNum);
-            // AscendC::Select(tempHalf1, dstLocal, tempHalf1, static_cast<half>(0), SELMODE::VSEL_TENSOR_SCALAR_MODE, this->processDataNum);
-            // AscendC::Cast(yLocal, tempHalf1, AscendC::RoundMode::CAST_NONE, this->processDataNum);
-
-            // AscendC::Sub(tempFloat1, tempFloat2, tempFloat1, this->processDataNum);
-            // AscendC::Relu(tempFloat1, tempFloat1, this->processDataNum);
-            // float scale = 1.0;
-            // AscendC::Adds(tempFloat2, tempFloat1, scale, this->processDataNum);
-            // AscendC::Div(tempFloat1, tempFloat1, tempFloat2, this->processDataNum);
-            // AscendC::Cast(tempHalf1, tempFloat1, AscendC::RoundMode::CAST_CEIL, this->processDataNum);
-            // AscendC::Cast(yLocal, tempHalf1, AscendC::RoundMode::CAST_CEIL, this->processDataNum);
             for (int i = 0; i < this->processDataNum; i++){
                 float t1 = tempFloat1.GetValue(i);
                 float t2 = tempFloat2.GetValue(i);
@@ -325,12 +276,6 @@ private:
                     yLocal.SetValue(i, 0);
                 }
             }
-            // for (int i = 0; i < 10; i++){
-            //     float t1 = tempFloat1.GetValue(i);
-            //     float t2 = tempFloat2.GetValue(i);
-            //     auto y = yLocal.GetValue(i);
-            //     AscendC::printf("t1 = %f, t2 = %f, yLocal[%d] = %d\n",t1, t2, i, y);
-            // }
             
             // 计算结果存入输出队列
             outQueueY.EnQue<int8_t>(yLocal);
@@ -342,10 +287,8 @@ private:
             tempQueueHalf.FreeTensor(tempHalf2);
             tempQueueFloat.FreeTensor(tempFloat1);
             tempQueueFloat.FreeTensor(tempFloat2);
-            // dstQueueUint8.FreeTensor(dstLocal);
         }
         else if (this->dataType == 3){
-            // return;
             // 传入的数据是 int32_t 类型的
             // 获取传入的数据以及分配传出数据的空间
             AscendC::LocalTensor<int32_t> x1Local = inQueueX1.DeQue<int32_t>();
@@ -353,10 +296,8 @@ private:
             AscendC::LocalTensor<int8_t> yLocal = outQueueY.AllocTensor<int8_t>();
 
             // 进行计算需要的临时变量
-            // AscendC::LocalTensor<half> tempHalf1 = tempQueueHalf.AllocTensor<half>();
             AscendC::LocalTensor<float> tempFloat1 = tempQueueFloat.AllocTensor<float>();
             AscendC::LocalTensor<float> tempFloat2 = tempQueueFloat.AllocTensor<float>();
-            // AscendC::LocalTensor<uint8_t> dstLocal = dstQueueUint8.AllocTensor<uint8_t>();
 
             // 数据计算
             AscendC::Cast(tempFloat1, x1Local, AscendC::RoundMode::CAST_CEIL, this->processDataNum);
@@ -366,10 +307,6 @@ private:
             AscendC::Abs(tempFloat2, tempFloat2, this->processDataNum);
             AscendC::Muls(tempFloat2, tempFloat2, this->rtol, this->processDataNum);
             AscendC::Adds(tempFloat2, tempFloat2, this->atol, this->processDataNum);
-            // AscendC::Duplicate<half>(tempHalf1, (half)1.0, this->processDataNum);
-            // AscendC::Compare(dstLocal, tempFloat1, tempFloat2, AscendC::CMPMODE::LE, this->processDataNum);
-            // AscendC::Select(tempHalf1, dstLocal, tempHalf1, static_cast<half>(0), SELMODE::VSEL_TENSOR_SCALAR_MODE, this->processDataNum);
-            // AscendC::Cast(yLocal, tempHalf1, AscendC::RoundMode::CAST_NONE, this->processDataNum);
             for (int i = 0; i < this->processDataNum; i++){
                 float t1 = tempFloat1.GetValue(i);
                 float t2 = tempFloat2.GetValue(i);
@@ -388,10 +325,7 @@ private:
             inQueueX2.FreeTensor(x2Local);
             tempQueueFloat.FreeTensor(tempFloat1);
             tempQueueFloat.FreeTensor(tempFloat2);
-            // dstQueueUint8.FreeTensor(dstLocal);
-            // tempQueueHalf.FreeTensor(tempHalf1);
         }else if (this->dataType == 1){
-            // return;
             // 传入的数据是 half 类型的
             AscendC::LocalTensor<half> x1Local = inQueueX1.DeQue<half>();
             AscendC::LocalTensor<half> x2Local = inQueueX2.DeQue<half>();
@@ -429,7 +363,6 @@ private:
             tempQueueFloat.FreeTensor(tempFloat1);
             tempQueueFloat.FreeTensor(tempFloat2);
         }else{
-            // return;
             // 传入的数据是 float 类型的
             AscendC::LocalTensor<float> x1Local = inQueueX1.DeQue<float>();
             AscendC::LocalTensor<float> x2Local = inQueueX2.DeQue<float>();
@@ -471,10 +404,6 @@ private:
         //考生补充算子代码
         AscendC::LocalTensor<int8_t> yLocal = outQueueY.DeQue<int8_t>();
         AscendC::DataCopy(yGm[progress * this->tileDataNum], yLocal, this->processDataNum);
-        // for (int i = 0; i < this->processDataNum; i++){
-        //     int8_t t = yLocal.GetValue(i);
-        //     AscendC::printf("y[%d] = %d\n", i, t);
-        // }
         outQueueY.FreeTensor(yLocal);
     }
 
@@ -520,9 +449,6 @@ extern "C" __global__ __aicore__ void is_close(GM_ADDR x1, GM_ADDR x2, GM_ADDR y
     KernelIsClose op;
     //补充init和process函数调用内容
     op.Init(x1, x2, y, tiling_data.bigCoreDataNum, tiling_data.tileDataNum, tiling_data.bigCoreNum, tiling_data.bigCoreCarryNum, 
-        tiling_data.bigCoreFinallDealNum,tiling_data.smallCoreDataNum, tiling_data.smallCoreCarryNum, tiling_data.smallCoreFinallDealNum, 
-        tiling_data.dataType, tiling_data.rtol, tiling_data.atol, tiling_data.equal_nan, tiling_data.dataTypeCp, tiling_data.size, 
-        tiling_data.dim, tiling_data.inputShape00, tiling_data.inputShape01, tiling_data.inputShape10, tiling_data.inputShape11, tiling_data.axis, 
-        tiling_data.who, tiling_data.isBroadcast);
+        tiling_data.bigCoreFinallDealNum,tiling_data.smallCoreDataNum, tiling_data.smallCoreCarryNum, tiling_data.smallCoreFinallDealNum, tiling_data.dataType, tiling_data.rtol, tiling_data.atol, tiling_data.equal_nan, tiling_data.dataTypeCp, tiling_data.size, tiling_data.dim, tiling_data.inputShape00, tiling_data.inputShape01, tiling_data.inputShape10, tiling_data.inputShape11, tiling_data.axis, tiling_data.who, tiling_data.isBroadcast);
     op.Process();
 }

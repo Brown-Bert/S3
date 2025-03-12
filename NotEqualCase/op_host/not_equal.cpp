@@ -12,7 +12,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   NotEqualTilingData tiling;
   // 获取数据类型
   auto dt = context->GetInputTensor(0)->GetDataType();
-  auto dt1 = context->GetInputTensor(1)->GetDataType();
 
   // 在compute接口中，每次计算需要同时消耗多少个LocalTensor
   uint64_t ubDataNum = 8; // 是根据具体的代码逻辑设定的，不是通过算出来的
@@ -85,13 +84,11 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
       }
       tiling.set_isBroadcast(1);
   }
-//   inputNum = context->GetInputShape(0)->GetStorageShape().GetShapeSize();
 
   // 获取UB内存大小
   uint64_t ubSize;
   auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
   ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
-//   std::cout << "ubsize = " << ubSize << std::endl;
 
   // 获取AiCore的物理核数
   auto coreNum = ascendcPlatform.GetCoreNum();
@@ -107,7 +104,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   // 数据的总大小
   uint64_t inputLength = inputNum * inputBytes;
 
-
   // aicore每次最多处理多少block块
   uint64_t blockNum = ubSize / 32 / 2 / ubDataNum;
 
@@ -116,17 +112,14 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
 
   // 根据32字节对齐计算数据的字节数
   uint64_t inputLengthAlgin32 = (inputLength + 32 - 1) / 32 * 32;
-//   inputLengthAlgin32 = 320; // warng answer
 
   // 计算数据需要几个core去执行，如果数据量太小就不需要全部的core去执行
   coreNum = (coreNum < inputLengthAlgin32 / 32) ? coreNum : inputLengthAlgin32 / 32;
   coreNum = (coreNum >= 1) ? coreNum : 1;
-//   std::cout << "coreNum = " << coreNum << std::endl;
-    tiling.set_coreNum(coreNum);
+  tiling.set_coreNum(coreNum);
 
   // 计算每个core需要处理多少个block
   uint64_t everyCoreInputBlockNum = inputLengthAlgin32 / 32 / coreNum;
-//   everyCoreInputBlockNum = 10; // warng answer
 
   // 上面一行不是整除的话，会剩余几个block
   uint64_t tailBlockNum = inputLengthAlgin32 / 32 % coreNum;
@@ -145,14 +138,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   // 计算小核最后一次需要处理多少数据
   uint64_t smallCoreFinallDealNum = smallCoreDataNum - (dataNum * smallCoreCount);
   smallCoreFinallDealNum = (smallCoreFinallDealNum == 0) ? dataNum : smallCoreFinallDealNum;
-
-
-//   std::cout << "smallCoreDataNum = " << smallCoreDataNum << std::endl;
-//   std::cout << "smallCoreCarryNum = " << smallCoreCarryNum << std::endl;
-//   std::cout << "smallCoreFinallDealNum = " << smallCoreFinallDealNum << std::endl;
-//   std::cout << "smallCoreCount = " << smallCoreCount << std::endl;
-
-
 
   /**
       大核
@@ -179,8 +164,8 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
 
   tiling.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
   context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
-  // size_t* currentWorkspace = context->GetWorkspaceSizes(1);
-  // currentWorkspace[0] = 0;
+  size_t* currentWorkspace = context->GetWorkspaceSizes(1);
+  currentWorkspace[0] = 0;
   context->SetBlockDim(coreNum);
 
   return ge::GRAPH_SUCCESS;

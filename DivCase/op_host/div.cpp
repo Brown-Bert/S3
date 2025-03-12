@@ -167,16 +167,12 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   tiling.set_dataType(dt);
   tiling.set_dim0(dim0);
   tiling.set_dim1(dim1);
-//   tiling.set_size1(inputNum);
-//   tiling.set_size2(inputNum1);
-//   tiling.set_inputShap2(inputShap2);
-//   tiling.set_whichSmall(whichSmall);
 
   tiling.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
   context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
   context->SetBlockDim(coreNum);
-  // size_t* currentWorkspace = context->GetWorkspaceSizes(1);
-  // currentWorkspace[0] = 0;
+  size_t* currentWorkspace = context->GetWorkspaceSizes(1);
+  currentWorkspace[0] = 0;
 
   return ge::GRAPH_SUCCESS;
 }

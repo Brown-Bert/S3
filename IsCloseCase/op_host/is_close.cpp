@@ -9,16 +9,15 @@ namespace optiling {
 static ge::graphStatus TilingFunc(gert::TilingContext* context)
 {
 
-  IsCloseTilingData tiling;
+    IsCloseTilingData tiling;
 
-  // 获取rtol atol equal_nan
-  float rtol =  *(context->GetAttrs()->GetFloat(0));
-  float atol =  *(context->GetAttrs()->GetFloat(1));
-  bool equal_nan =  *(context->GetAttrs()->GetBool(2));
+    // 获取rtol atol equal_nan
+    float rtol =  *(context->GetAttrs()->GetFloat(0));
+    float atol =  *(context->GetAttrs()->GetFloat(1));
+    bool equal_nan =  *(context->GetAttrs()->GetBool(2));
 
-  // 获取数据类型 0 float 1 half 2 int8 3 int32
-  auto dt = context->GetInputTensor(0)->GetDataType();
-//   auto dt1 = context->GetInputTensor(1)->GetDataType();
+    // 获取数据类型 0 float 1 half 2 int8 3 int32
+    auto dt = context->GetInputTensor(0)->GetDataType();
 
     // 计算是否要进行广播以及广播的进行方式
     auto inputShape0 = context->GetInputShape(0)->GetStorageShape();
@@ -55,11 +54,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
         tiling.set_inputShape01(shape01);
         tiling.set_inputShape10(shape10);
         tiling.set_inputShape11(shape11);
-        // std::cout << "shape00 = " << shape00 << " shape01 = " << shape01 << " shape10 = " << shape10 << " shape11 = " << shape11 << std::endl;
-        // tiling.set_inputShape00(inputShape0.GetDim(0));
-        // tiling.set_inputShape01(inputShape0.GetDim(1));
-        // tiling.set_inputShape10(inputShape1.GetDim(0));
-        // tiling.set_inputShape11(inputShape1.GetDim(1));
         // 先判断谁需要进行广播
         uint32_t who = -1;
         if (inputShape0.GetShapeSize() < inputShape1.GetShapeSize()){
@@ -95,7 +89,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   uint64_t ubSize;
   auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
   ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
-//   std::cout << "ubsize = " << ubSize << std::endl;
 
   // 获取AiCore的物理核数
   auto coreNum = ascendcPlatform.GetCoreNum();
@@ -130,7 +123,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   // 计算数据需要几个core去执行，如果数据量太小就不需要全部的core去执行
   coreNum = (coreNum < inputLengthAlgin32 / 32) ? coreNum : inputLengthAlgin32 / 32;
   coreNum = (coreNum >= 1) ? coreNum : 1;
-//   std::cout << "coreNum = " << coreNum << std::endl;
 
   // 计算每个core需要处理多少个block
   uint32_t everyCoreInputBlockNum = inputLengthAlgin32 / 32 / coreNum;
@@ -152,12 +144,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   // 计算小核最后一次需要处理多少数据
   uint32_t smallCoreFinallDealNum = smallCoreDataNum - (dataNum * smallCoreCount);
   smallCoreFinallDealNum = (smallCoreFinallDealNum == 0) ? dataNum : smallCoreFinallDealNum;
-
-//   std::cout << "smallCoreDataNum = " << smallCoreDataNum << std::endl;
-//   std::cout << "smallCoreCarryNum = " << smallCoreCarryNum << std::endl;
-//   std::cout << "smallCoreFinallDealNum = " << smallCoreFinallDealNum << std::endl;
-//   std::cout << "smallCoreCount = " << smallCoreCount << std::endl;
-
 
 
   /**
@@ -194,8 +180,8 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
 
   tiling.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
   context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
-  // size_t* currentWorkspace = context->GetWorkspaceSizes(1);
-  // currentWorkspace[0] = 0;
+  size_t* currentWorkspace = context->GetWorkspaceSizes(1);
+  currentWorkspace[0] = 0;
   context->SetBlockDim(coreNum);
 
   return ge::GRAPH_SUCCESS;

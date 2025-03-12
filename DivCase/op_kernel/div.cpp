@@ -9,7 +9,6 @@ public:
         uint32_t smallCoreFinallDealNum, uint32_t bigCoreDataNum, uint32_t bigCoreCarryNum, uint32_t bigCoreFinallDealNum, uint32_t bigCoreNum, uint32_t inputShape00, uint32_t inputShape01, uint32_t inputShape10, uint32_t inputShape11,
         uint8_t dataType, uint8_t dim0, uint8_t dim1, uint8_t axis, uint8_t who, uint8_t isBroadcast)
     {
-        // this->type = type;
         //考生补充初始化代码
         this->dim0 = dim0;
         this->dim1 = dim1;
@@ -22,7 +21,6 @@ public:
         this->isBroadcast = isBroadcast;
         this->dataType = dataType;
         uint32_t aicoreIndex = GetBlockIdx();
-        // uint32_t globalBufferIndex = 0;
         uint32_t globalBufferIndex = bigCoreDataNum * aicoreIndex;
         this->tileDataNum = tileDataNum;
         if (aicoreIndex < bigCoreNum){
@@ -49,7 +47,6 @@ public:
     }
     __aicore__ inline void Process()
     {
-        //考生补充对“loopCount”的定义，注意对Tiling的处理
         uint32_t loopCount = this->coreCarryTimes;
         this->processDataNum = this->tileDataNum;
 
@@ -93,7 +90,6 @@ private:
     }
     __aicore__ inline void CopyIn(int32_t progress)
     {
-        //考生补充算子代码
         AscendC::LocalTensor<DTYPE_X1> x1Local = inQueueX1.AllocTensor<DTYPE_X1>();
         AscendC::LocalTensor<DTYPE_X2> x2Local = inQueueX2.AllocTensor<DTYPE_X2>();
         // 根据数据量拷贝的大小进行手动广播
@@ -136,7 +132,6 @@ private:
                 }else{
                     // 第一个输入数据需要广播 按照axis = 1的方向进行广播
                     // 计算第一行要加载多少个数据
-                    // AscendC::printf("tileDataNum = %d, progress = %d, processDataNum = %d\n", this->tileDataNum, progress, this->processDataNum);
                     auto first = this->inputShape01 - progress * this->tileDataNum % this->inputShape01;
                     auto row = 0;
                     auto colLeaf = 0;
@@ -251,7 +246,6 @@ private:
     }
     __aicore__ inline void Compute(int32_t progress)
     {
-        //考生补充算子计算代码
         if (this->dataType == 2){
             // 传入的数据是 int8_t 类型的
 
@@ -338,7 +332,6 @@ private:
     }
     __aicore__ inline void CopyOut(int32_t progress)
     {
-        //考生补充算子代码
         AscendC::LocalTensor<DTYPE_Y> yLocal = outQueueY.DeQue<DTYPE_Y>();
         AscendC::DataCopy(yGm[progress * this->tileDataNum], yLocal, this->processDataNum);
         outQueueY.FreeTensor(yLocal);
@@ -354,16 +347,12 @@ private:
     GlobalTensor<DTYPE_X1> x1Gm, x2Gm;
     GlobalTensor<DTYPE_Y> yGm;
 
-    //考生补充自定义成员变量
     uint32_t tileDataNum;
     uint32_t coreDataNum; // 每个核要处理的数据量
     uint32_t coreCarryTimes; // 每个核循环计算的次数
     uint32_t coreFinallDataNum; // 每个核最后处理的数据量
     uint32_t processDataNum; // 每个核每次要处理的数据量
-    // DataType type; // 数据类型
     uint8_t dataType; // 运行时数据类型
-    // uint32_t size1;
-    // uint32_t size2;
     uint32_t inputShape00;
     uint32_t inputShape01;
     uint32_t inputShape10;

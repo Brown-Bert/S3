@@ -25,57 +25,17 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
 
   auto shape = context->GetInputShape(0)->GetStorageShape();
   auto dim_num = shape.GetDimNum();
-  // for (int i = 0; i < dim_num; i++)
-  // {
-  //     std::cout << "dim[" << i << "] = " << shape.GetDim(i) << " dims = " << dim_num << std::endl;
-  // }
 
   // 根据axis要更新的维度，计算出要搬运的数据之间的间隔
   uint32_t interval = 0;
-//   uint32_t mul = 1;
-//   int flag = 0;
-//   for (int i =0; i < dim_num; ++i){
-//     if (i > axis) {
-//         num *= shape.GetDim(i);
-//         flag = 1;
-//     }
-//   }
-//   if (flag) interval = mul;
 
   // 获取数据类型
   auto dt = context->GetInputTensor(0)->GetDataType();
-  // auto dt1 = context->GetInputTensor(2)->GetDataType();
-  // std::cout << "dt = " << dt << std::endl;
-
-//   switch(dt)
-//     {
-//         case 0:{
-//             // float
-//             std::cout << "tiling float" << std::endl;
-//             break;
-//         }
-//         case 1:{
-//             // half
-//             std::cout << "tiling half" << std::endl;
-//             break;
-//         }
-//         case 2:{
-//             // int 8
-//             std::cout << "tiling int8" << std::endl;
-//             break;
-//         }
-//         case 3:{
-//             // int32
-//             std::cout << "tiling int32" << std::endl;
-//             break;
-//         }
-//     }
 
   // 获取UB内存大小
   uint64_t ubSize;
   auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
   ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
-//   std::cout << "ubsize = " << ubSize << std::endl;
 
   // 获取AiCore的物理核数
   auto coreNum = ascendcPlatform.GetCoreNum();
@@ -110,11 +70,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
     tiling.set_varDim1(varDim1);
     tiling.set_varDim2(varDim2);
   }else if(dt == 3){
-    // if (dt != dt1){
-    //   optype = 10;
-    // }
-    // optype = context->GetInputShape(1)->GetStorageShape().GetShapeSize();
-    // dim_num = context->GetInputShape(2)->GetStorageShape().GetShapeSize();
     inputNum = context->GetInputShape(1)->GetStorageShape().GetShapeSize();
     auto dim0 = context->GetInputShape(1)->GetStorageShape().GetDim(0);
     auto dim1 = context->GetInputShape(1)->GetStorageShape().GetDim(1);
@@ -128,7 +83,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
     tiling.set_varDim0(varDim0);
     tiling.set_varDim1(varDim1);
     tiling.set_varDim2(varDim2);
-    // ubDataNum = 64;
   }else if (dt == 4){
     inputNum = context->GetInputShape(1)->GetStorageShape().GetShapeSize();
     auto dim0 = context->GetInputShape(1)->GetStorageShape().GetDim(0);
@@ -173,7 +127,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   // 计算数据需要几个core去执行，如果数据量太小就不需要全部的core去执行
   coreNum = (coreNum < inputLengthAlgin32 / 32) ? coreNum : inputLengthAlgin32 / 32;
   coreNum = (coreNum >= 1) ? coreNum : 1;
-//   std::cout << "coreNum = " << coreNum << std::endl;
 
   // 计算每个core需要处理多少个block
   uint32_t everyCoreInputBlockNum = inputLengthAlgin32 / 32 / coreNum;
@@ -195,13 +148,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
   // 计算小核最后一次需要处理多少数据
   uint32_t smallCoreFinallDealNum = smallCoreDataNum - (dataNum * smallCoreCount);
   smallCoreFinallDealNum = (smallCoreFinallDealNum == 0) ? dataNum : smallCoreFinallDealNum;
-
-//   std::cout << "smallCoreDataNum = " << smallCoreDataNum << std::endl;
-//   std::cout << "smallCoreCarryNum = " << smallCoreCarryNum << std::endl;
-//   std::cout << "smallCoreFinallDealNum = " << smallCoreFinallDealNum << std::endl;
-//   std::cout << "smallCoreCount = " << smallCoreCount << std::endl;
-
-
 
   /**
       大核
@@ -232,8 +178,8 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
 
   tiling.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
   context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
-  // size_t* currentWorkspace = context->GetWorkspaceSizes(1);
-  // currentWorkspace[0] = 0;
+  size_t* currentWorkspace = context->GetWorkspaceSizes(1);
+  currentWorkspace[0] = 0;
   context->SetBlockDim(coreNum);
 
   return ge::GRAPH_SUCCESS;
