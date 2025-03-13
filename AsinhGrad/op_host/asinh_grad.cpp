@@ -5,7 +5,7 @@
 // 宏定义
 const uint32_t BLOCK_SIZE = 32;
 const uint32_t ORI_TILE_LENGTH = 32;
-const uint32_t MAX_TILE_LENGTH = 1024*4;
+const uint32_t MAX_TILE_LENGTH = 1024*2;
 
 namespace optiling {
 static ge::graphStatus TilingFunc(gert::TilingContext* context)

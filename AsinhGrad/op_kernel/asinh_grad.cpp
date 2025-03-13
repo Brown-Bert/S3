@@ -145,7 +145,7 @@ private:
             inQueueTmpY.FreeTensor(yMidSecLocal);
             inQueueTmpY.FreeTensor(yMidSignSecLocal);
             inQueueTmpY.FreeTensor(yBigSecLocal);
-            inQueueTmpY.FreeTensor(yBigSignSecLocal);
+            // inQueueTmpY.FreeTensor(yBigSignSecLocal);
         }
         else if(this->daType == 2)
         {
